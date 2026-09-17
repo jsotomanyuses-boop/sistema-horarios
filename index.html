@@ -107,7 +107,6 @@
     background: rgba(255,255,255,0.6);
   }
 
-  /* Tabla adaptativa al 100% de la pantalla */
   table { 
     width: 100%; 
     border-collapse: collapse; 
@@ -136,7 +135,7 @@
   
   .employee-col { 
     text-align: left; 
-    width: 150px; /* Ancho fijo óptimo para el nombre */
+    width: 150px; 
     min-width: 150px;
     font-weight: bold; 
     background: #ffffff; 
@@ -161,7 +160,7 @@
   .total-col { 
     font-weight: bold; 
     background: rgba(0, 156, 222, 0.05); 
-    width: 90px; /* Ancho fijo óptimo para la columna total */
+    width: 90px; 
     min-width: 90px;
     font-size: 11px; 
     color: #0369a1; 
@@ -254,7 +253,7 @@
   <div class="header-actions">
     <h2>Control de Horarios y Personal</h2>
     <div class="controls">
-      <input type="month" id="month-picker" value="2026-10" onchange="initMonth()">
+      <input type="month" id="month-picker" value="2026-09" onchange="initMonth()">
       <select id="period-picker" onchange="initMonth()">
         <option value="completo">📅 Mes Completo</option>
         <option value="q1">📌 1ra Quincena (1 - 15)</option>
@@ -269,7 +268,7 @@
     <span><i class="legend-box" style="background:rgba(249, 115, 22, 0.2)"></i> Libre</span>
     <span><i class="legend-box" style="background:rgba(168, 85, 247, 0.2)"></i> Vacaciones</span>
     <span><i class="legend-box" style="background:rgba(100, 116, 139, 0.2)"></i> Ausente</span>
-    <span style="margin-left: auto; color: #64748b;">💡 <i>Haz clic en cualquier celda para editar turnos o agregar comentarios.</i></span>
+    <span style="margin-left: auto; color: #64748b;">💡 <i>Haz clic en cualquier celda para editar turnos o comentarios.</i></span>
   </div>
 
   <div class="table-responsive">
@@ -302,10 +301,10 @@
     <div class="form-group">
       <label>Estado del día:</label>
       <select id="modal-type" onchange="toggleTimeInputs()">
-        <option value="turno">Turno Laboral (Con horas)</option>
-        <option value="libre">Día Libre</option>
+        <option value="turno">Trabajado (Con horas)</option>
+        <option value="libre">Libre</option>
         <option value="vacaciones">Vacaciones</option>
-        <option value="ausente">Ausente / Injustificado</option>
+        <option value="ausente">Ausente</option>
         <option value="vacio">Sin Asignar</option>
       </select>
     </div>
@@ -334,26 +333,24 @@
 <script>
   let currentDaysCount = 31;
   let currentYear = 2026;
-  let currentMonth = 10;
+  let currentMonth = 9;
   let startDay = 1;
   let endDay = 31;
   let employees = [];
   let activeEdit = { empIndex: null, day: null };
 
   function loadData() {
-    const saved = localStorage.getItem('business_employees_data_v2');
+    const saved = localStorage.getItem('business_employees_data_v5');
     if (saved) {
       employees = JSON.parse(saved);
     } else {
-      employees = [
-        { name: "Juan Pérez", schedule: {} },
-        { name: "María Gómez", schedule: {} }
-      ];
+      // Sin empleados de prueba por defecto (vacío)
+      employees = [];
     }
   }
 
   function saveData() {
-    localStorage.setItem('business_employees_data_v2', JSON.stringify(employees));
+    localStorage.setItem('business_employees_data_v5', JSON.stringify(employees));
   }
 
   function initMonth() {
@@ -383,10 +380,23 @@
     renderTable();
   }
 
-  function getFormattedDateStr(day) {
+  // Formato estricto dd/mm/yyyy con ceros iniciales
+  function getFullDateStr(day) {
     const dStr = String(day).padStart(2, '0');
     const mStr = String(currentMonth).padStart(2, '0');
-    return `${dStr}/${mStr}`;
+    return `${dStr}/${mStr}/${currentYear}`;
+  }
+
+  // Formato adaptativo para la interfaz / PDF (muestra solo el número de día si es mes completo)
+  function getDisplayDateStr(day) {
+    const period = document.getElementById('period-picker').value;
+    if (period === 'completo') {
+      return String(day);
+    } else {
+      const dStr = String(day).padStart(2, '0');
+      const mStr = String(currentMonth).padStart(2, '0');
+      return `${dStr}/${mStr}`;
+    }
   }
 
   function buildTableHeaders() {
@@ -399,7 +409,7 @@
 
     for (let d = startDay; d <= endDay; d++) {
       const th = document.createElement('th');
-      th.textContent = getFormattedDateStr(d);
+      th.textContent = getDisplayDateStr(d);
       trHead.appendChild(th);
     }
 
@@ -409,6 +419,19 @@
   function renderTable() {
     const tbody = document.getElementById('employee-tbody');
     tbody.innerHTML = '';
+
+    if (employees.length === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = (endDay - startDay + 2);
+      td.style.textAlign = 'center';
+      td.style.padding = '25px';
+      td.style.color = '#64748b';
+      td.innerHTML = 'No hay colaboradores registrados. Haz clic en <strong>"Nuevo Empleado"</strong> para comenzar.';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
 
     employees.forEach((emp, empIndex) => {
       const tr = document.createElement('tr');
@@ -444,9 +467,9 @@
           }
           
           if (dayData.type === 'turno') {
-            td.innerHTML = `<span style="font-size:8px; display:block">${dayData.start}-${dayData.end}</span><strong>${dayData.netHours}h</strong>`;
+            td.innerHTML = `<span style="font-size:8px; display:block">${dayData.start}-${dayData.end}</span><strong>${dayData.netHours}:00</strong>`;
           } else {
-            td.textContent = capitalize(dayData.type);
+            td.textContent = capitalizeState(dayData.type);
           }
         } else {
           td.dataset.state = 'vacio';
@@ -459,7 +482,7 @@
 
       const tdTotal = document.createElement('td');
       tdTotal.className = 'total-col';
-      tdTotal.textContent = calculatePeriodNetHours(emp) + ' hrs';
+      tdTotal.textContent = calculatePeriodNetHours(emp) + ':00 hrs';
       tr.appendChild(tdTotal);
 
       tbody.appendChild(tr);
@@ -468,7 +491,7 @@
 
   function openModal(empIndex, day) {
     activeEdit = { empIndex, day };
-    const fullDateStr = `${String(day).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')}/${currentYear}`;
+    const fullDateStr = getFullDateStr(day);
     document.getElementById('modal-title').textContent = `Fecha ${fullDateStr} - ${employees[empIndex].name}`;
     
     const currentData = employees[empIndex].schedule[day] || { type: 'turno', start: '11:30', end: '20:30', comment: '' };
@@ -503,7 +526,7 @@
       const [endH, endM] = end.split(':').map(Number);
       let diff = (endH + endM / 60) - (startH + startM / 60);
       if (diff < 0) diff += 24; 
-      netHours = Math.max(0, parseFloat((diff - 1).toFixed(1)));
+      netHours = Math.max(0, Math.floor(diff - 1)); // Descuenta 1h de almuerzo
     }
 
     employees[activeEdit.empIndex].schedule[activeEdit.day] = { type, start, end, netHours, comment };
@@ -519,7 +542,7 @@
         total += emp.schedule[d].netHours || 0;
       }
     }
-    return parseFloat(total.toFixed(1));
+    return total;
   }
 
   function addEmployee() {
@@ -539,11 +562,12 @@
     }
   }
 
-  function capitalize(str) {
+  function capitalizeState(str) {
     if (!str) return '';
+    if (str === 'turno') return 'Trabajado';
     if (str === 'libre') return 'Libre';
-    if (str === 'vacaciones') return 'Vac.';
-    if (str === 'ausente') return 'Aus.';
+    if (str === 'vacaciones') return 'Vacaciones';
+    if (str === 'ausente') return 'Ausente';
     return str;
   }
 
@@ -551,38 +575,42 @@
     const monthVal = document.getElementById('month-picker').value;
     const period = document.getElementById('period-picker').value;
     
-    let csvContent = "data:text/csv;charset=utf-8,";
-    let headers = ["Nombre", "Fecha", "Estado", "Horas Trabajadas", "Comentario"];
-    csvContent += headers.join(",") + "\r\n";
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // BOM para compatibilidad con Excel
+    let headers = ["Nombre", "Fecha", "Estado", "Hora Inicio", "Hora Fin", "Almuerzo", "Horas Trabajadas"];
+    csvContent += headers.join("\t") + "\r\n";
 
     employees.forEach(emp => {
       for (let d = startDay; d <= endDay; d++) {
         const data = emp.schedule[d];
-        const fechaStr = `${String(d).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')}/${currentYear}`;
+        const fechaStr = getFullDateStr(d); // Formato estricto dd/mm/yyyy
         
         let estado = "Sin Asignar";
-        let horasTrabajadas = 0;
-        let comentario = "";
+        let horaInicio = "0:00";
+        let horaFin = "0:00";
+        let almuerzo = "0:00";
+        let horasTrabajadas = "0:00";
 
         if (data) {
-          estado = capitalize(data.type);
+          estado = capitalizeState(data.type);
           if (data.type === 'turno') {
-            horasTrabajadas = data.netHours || 0;
-          }
-          if (data.comment) {
-            comentario = `"${data.comment.replace(/"/g, '""')}"`;
+            horaInicio = data.start;
+            horaFin = data.end;
+            almuerzo = "1:00";
+            horasTrabajadas = `${data.netHours}:00`;
           }
         }
 
         let row = [
-          `"${emp.name}"`,
+          emp.name,
           fechaStr,
           estado,
-          horasTrabajadas,
-          comentario
+          horaInicio,
+          horaFin,
+          almuerzo,
+          horasTrabajadas
         ];
 
-        csvContent += row.join(",") + "\r\n";
+        csvContent += row.join("\t") + "\r\n";
       }
     });
 
