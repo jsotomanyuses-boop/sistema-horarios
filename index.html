@@ -3,71 +3,256 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Control de Horarios - Restaurante</title>
+<title>Control de Horas y Asistencia - Gestión de Personal</title>
 <!-- Librerías para exportación a PDF HD -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
+  :root {
+    --primary-blue: #009cde;
+    --accent-orange: #f97316;
+    --accent-purple: #a855f7;
+    --bg-glass: rgba(255, 255, 255, 0.90);
+    --border-glass: rgba(255, 255, 255, 0.5);
+    --text-color: #1e293b;
+  }
+
   * { box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; background: #f8fafc; padding: 15px; color: #1e293b; margin: 0; }
   
-  .container { background: #fff; border-radius: 8px; padding: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 1400px; margin: 0 auto; }
+  body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+    background-attachment: fixed;
+    padding: 10px; 
+    color: var(--text-color); 
+    margin: 0; 
+    width: 100vw;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
   
-  .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-  h2 { margin: 0; font-size: 18px; color: #0f172a; }
+  .container { 
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px; 
+    padding: 15px; 
+    box-shadow: 0 10px 30px 0 rgba(0, 0, 0, 0.08); 
+    width: 100%; 
+    max-width: 100%; 
+    margin: 0; 
+  }
   
-  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  input[type="month"], select { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff; }
+  .header-actions { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 15px; 
+    flex-wrap: wrap; 
+    gap: 15px; 
+    border-bottom: 2px solid rgba(0, 156, 222, 0.15);
+    padding-bottom: 12px;
+  }
   
-  button { background: #2563eb; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
-  button:hover { background: #1d4ed8; }
-  button.btn-success { background: #059669; }
-  button.btn-success:hover { background: #047857; }
-  button.btn-pdf { background: #dc2626; }
-  button.btn-pdf:hover { background: #b91c1c; }
+  h2 { margin: 0; font-size: 18px; color: #0f172a; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  h2::before { content: ''; display: inline-block; width: 6px; height: 18px; background: var(--primary-blue); border-radius: 3px; }
 
-  .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; border: 1px solid #e2e8f0; border-radius: 6px; }
+  .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  
+  input[type="month"], select { 
+    padding: 7px 10px; 
+    border: 1px solid #cbd5e1; 
+    border-radius: 8px; 
+    font-size: 12px; 
+    background: rgba(255,255,255,0.9);
+    outline: none;
+    transition: all 0.2s;
+  }
+  input[type="month"]:focus, select:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(0, 156, 222, 0.15);
+  }
+  
+  button { 
+    background: var(--primary-blue); 
+    color: white; 
+    border: none; 
+    padding: 8px 14px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: 600; 
+    font-size: 12px; 
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 156, 222, 0.2);
+  }
+  button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  
+  button.btn-success { 
+    background: #059669; 
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+  }
+  button.btn-pdf { 
+    background: var(--accent-orange); 
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+  }
 
-  table { width: 100%; border-collapse: collapse; min-width: 900px; }
-  th, td { border: 1px solid #e2e8f0; padding: 6px; text-align: center; font-size: 11px; white-space: nowrap; }
-  th { background: #f1f5f9; color: #475569; font-weight: bold; position: sticky; top: 0; z-index: 2; }
-  
-  .employee-col { text-align: left; width: 170px; font-weight: bold; background: #fff; position: sticky; left: 0; z-index: 3; font-size: 12px; display: flex; justify-content: space-between; align-items: center; padding: 6px; border-right: 1px solid #e2e8f0; }
-  th.employee-col { z-index: 4; display: table-cell; text-align: center; }
-  
-  .total-col { font-weight: bold; background: #f8fafc; width: 130px; font-size: 12px; }
+  .table-responsive { 
+    width: 100%; 
+    overflow-x: auto; 
+    margin-top: 8px; 
+    border: 1px solid rgba(226, 232, 240, 0.8); 
+    border-radius: 8px; 
+    background: rgba(255,255,255,0.6);
+  }
 
-  .day-cell { cursor: pointer; user-select: none; height: 38px; transition: background 0.2s; }
-  .day-cell:hover { opacity: 0.85; filter: brightness(0.95); }
+  /* Tabla adaptativa al 100% de la pantalla */
+  table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    table-layout: fixed; 
+  }
+
+  th, td { 
+    border: 1px solid #e2e8f0; 
+    padding: 4px 2px; 
+    text-align: center; 
+    font-size: 10px; 
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  th { 
+    background: #f8fafc; 
+    color: #475569; 
+    font-weight: bold; 
+    position: sticky; 
+    top: 0; 
+    z-index: 2; 
+    font-size: 9.5px;
+  }
   
-  .day-cell[data-state="turno"] { background: #dbeafe; color: #1e40af; font-weight: bold; }
-  .day-cell[data-state="libre"] { background: #fee2e2; color: #991b1b; }
-  .day-cell[data-state="vacaciones"] { background: #fef3c7; color: #92400e; }
-  .day-cell[data-state="ausente"] { background: #e2e8f0; color: #475569; }
+  .employee-col { 
+    text-align: left; 
+    width: 150px; /* Ancho fijo óptimo para el nombre */
+    min-width: 150px;
+    font-weight: bold; 
+    background: #ffffff; 
+    position: sticky; 
+    left: 0; 
+    z-index: 3; 
+    font-size: 11px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 6px 8px; 
+    border-right: 1px solid #e2e8f0; 
+  }
+  th.employee-col { 
+    z-index: 4; 
+    display: table-cell; 
+    text-align: center; 
+    background: #f8fafc; 
+    width: 150px; 
+  }
+  
+  .total-col { 
+    font-weight: bold; 
+    background: rgba(0, 156, 222, 0.05); 
+    width: 90px; /* Ancho fijo óptimo para la columna total */
+    min-width: 90px;
+    font-size: 11px; 
+    color: #0369a1; 
+  }
+
+  .day-cell { 
+    cursor: pointer; 
+    user-select: none; 
+    height: 38px; 
+    transition: all 0.15s; 
+    vertical-align: middle; 
+  }
+  .day-cell:hover { filter: brightness(0.95); transform: scale(0.98); }
+  
+  .day-cell[data-state="turno"] { background: rgba(0, 156, 222, 0.12); color: #0369a1; font-weight: bold; }
+  .day-cell[data-state="libre"] { background: rgba(249, 115, 22, 0.12); color: #c2410c; }
+  .day-cell[data-state="vacaciones"] { background: rgba(168, 85, 247, 0.12); color: #7e22ce; }
+  .day-cell[data-state="ausente"] { background: rgba(100, 116, 139, 0.12); color: #334155; }
   .day-cell[data-state="vacio"] { background: #ffffff; color: #cbd5e1; }
 
-  .btn-delete { background: #ef4444; color: white; border: none; border-radius: 4px; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
-  .btn-delete:hover { background: #dc2626; }
+  .has-comment {
+    position: relative;
+  }
+  .has-comment::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 5px;
+    height: 5px;
+    background: var(--accent-orange);
+    border-radius: 50%;
+  }
 
-  .legend { display: flex; gap: 12px; margin-top: 12px; font-size: 11px; align-items: center; flex-wrap: wrap; }
-  .legend-box { width: 12px; height: 12px; border-radius: 3px; display: inline-block; vertical-align: middle; }
+  .btn-delete { 
+    background: #ef4444; 
+    color: white; 
+    border: none; 
+    border-radius: 4px; 
+    width: 16px; 
+    height: 16px; 
+    font-size: 9px; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 0; 
+    flex-shrink: 0; 
+    box-shadow: none;
+  }
+  .btn-delete:hover { background: #dc2626; transform: none; }
 
-  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 10; padding: 15px; }
-  .modal-content { background: white; padding: 20px; border-radius: 8px; width: 100%; max-width: 320px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-  .modal-content h3 { margin-top: 0; font-size: 16px; color: #0f172a; }
-  .form-group { margin-bottom: 12px; }
-  .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #475569; }
-  .form-group input, .form-group select { width: 100%; padding: 6px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px; }
+  .legend { display: flex; gap: 12px; margin-top: 10px; font-size: 11px; align-items: center; flex-wrap: wrap; }
+  .legend-box { width: 10px; height: 10px; border-radius: 3px; display: inline-block; vertical-align: middle; }
+
+  .bottom-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .export-group { display: flex; gap: 10px; }
+
+  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 10; padding: 15px; }
+  .modal-content { background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 360px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); animation: modalIn 0.2s ease; }
+  
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .modal-content h3 { margin-top: 0; font-size: 15px; color: #0f172a; margin-bottom: 12px; }
+  .form-group { margin-bottom: 10px; }
+  .form-group label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 3px; color: #475569; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 6px 10px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; font-family: inherit; }
+  .form-group textarea { resize: vertical; height: 55px; }
+  
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
-  .modal-actions button.cancel { background: #64748b; }
+  .modal-actions button.cancel { background: #64748b; box-shadow: none; }
 </style>
 </head>
 <body>
 
 <div class="container" id="pdf-container">
   <div class="header-actions">
-    <h2>Control de Asistencia - Restaurante</h2>
+    <h2>Control de Horarios y Personal</h2>
     <div class="controls">
       <input type="month" id="month-picker" value="2026-10" onchange="initMonth()">
       <select id="period-picker" onchange="initMonth()">
@@ -75,31 +260,38 @@
         <option value="q1">📌 1ra Quincena (1 - 15)</option>
         <option value="q2">📌 2da Quincena (16 - Fin)</option>
       </select>
-      <button onclick="addEmployee()">+ Agregar</button>
-      <button class="btn-success" onclick="exportToCSV()">📥 CSV</button>
-      <button class="btn-pdf" id="btn-export-pdf" onclick="exportReportPDF()">📄 PDF HD</button>
+      <button onclick="addEmployee()">Nuevo Empleado</button>
     </div>
   </div>
 
   <div class="legend">
-    <span><i class="legend-box" style="background:#dbeafe"></i> Turno</span>
-    <span><i class="legend-box" style="background:#fee2e2"></i> Libre</span>
-    <span><i class="legend-box" style="background:#fef3c7"></i> Vacaciones</span>
-    <span><i class="legend-box" style="background:#e2e8f0"></i> Ausente</span>
-    <span style="margin-left: auto; color: #64748b;">💡 <i>Auto-guardado activo</i></span>
+    <span><i class="legend-box" style="background:rgba(0, 156, 222, 0.2)"></i> Turno</span>
+    <span><i class="legend-box" style="background:rgba(249, 115, 22, 0.2)"></i> Libre</span>
+    <span><i class="legend-box" style="background:rgba(168, 85, 247, 0.2)"></i> Vacaciones</span>
+    <span><i class="legend-box" style="background:rgba(100, 116, 139, 0.2)"></i> Ausente</span>
+    <span style="margin-left: auto; color: #64748b;">💡 <i>Haz clic en cualquier celda para editar turnos o agregar comentarios.</i></span>
   </div>
 
   <div class="table-responsive">
     <table id="schedule-table">
       <thead>
         <tr id="header-row">
-          <th class="employee-col">Empleado / Rol</th>
-          <th class="total-col" id="total-header-title">Total Horas Trabajadas en el Mes</th>
+          <th class="employee-col">Colaborador</th>
+          <th class="total-col" id="total-header-title">Total Horas</th>
         </tr>
       </thead>
       <tbody id="employee-tbody">
       </tbody>
     </table>
+  </div>
+
+  <!-- Botones de Exportación abajo y ocultos en PDF -->
+  <div class="bottom-actions" id="action-buttons-bar">
+    <span style="font-size: 11px; color: #64748b;">Gestión horarios y asistencias | v1.0</span>
+    <div class="export-group">
+      <button class="btn-success" onclick="exportToCSV()">📥 Exportar CSV</button>
+      <button class="btn-pdf" id="btn-export-pdf" onclick="exportReportPDF()">📄 Descargar PDF HD</button>
+    </div>
   </div>
 </div>
 
@@ -120,13 +312,17 @@
     <div id="time-inputs-container">
       <div class="form-group">
         <label>Hora de Entrada:</label>
-        <input type="time" id="modal-start" value="09:00">
+        <input type="time" id="modal-start" value="11:30">
       </div>
       <div class="form-group">
         <label>Hora de Salida:</label>
-        <input type="time" id="modal-end" value="17:00">
+        <input type="time" id="modal-end" value="20:30">
       </div>
-      <p style="font-size: 11px; color: #64748b; margin-top: 4px;"><i>* Se descuenta automáticamente 1h de almuerzo.</i></p>
+      <p style="font-size: 10px; color: #64748b; margin-top: -2px; margin-bottom: 8px;"><i>* Descuento automático de 1h de almuerzo.</i></p>
+    </div>
+    <div class="form-group">
+      <label>Comentario / Nota (Ej: Trabajo de más, compensación):</label>
+      <textarea id="modal-comment" placeholder="Ej. Trabajó 4 horas de compensación..."></textarea>
     </div>
     <div class="modal-actions">
       <button class="cancel" onclick="closeModal()">Cancelar</button>
@@ -145,19 +341,19 @@
   let activeEdit = { empIndex: null, day: null };
 
   function loadData() {
-    const saved = localStorage.getItem('restaurant_employees_data');
+    const saved = localStorage.getItem('business_employees_data_v2');
     if (saved) {
       employees = JSON.parse(saved);
     } else {
       employees = [
-        { name: "Jose Soto", schedule: {} },
-        { name: "Benjamin Soto", schedule: {} }
+        { name: "Juan Pérez", schedule: {} },
+        { name: "María Gómez", schedule: {} }
       ];
     }
   }
 
   function saveData() {
-    localStorage.setItem('restaurant_employees_data', JSON.stringify(employees));
+    localStorage.setItem('business_employees_data_v2', JSON.stringify(employees));
   }
 
   function initMonth() {
@@ -171,15 +367,15 @@
     if (period === 'q1') {
       startDay = 1;
       endDay = 15;
-      document.getElementById('total-header-title').textContent = "Total Horas (1ra Quincena)";
+      document.getElementById('total-header-title').textContent = "Total (Q1)";
     } else if (period === 'q2') {
       startDay = 16;
       endDay = currentDaysCount;
-      document.getElementById('total-header-title').textContent = "Total Horas (2da Quincena)";
+      document.getElementById('total-header-title').textContent = "Total (Q2)";
     } else {
       startDay = 1;
       endDay = currentDaysCount;
-      document.getElementById('total-header-title').textContent = "Total Horas Trabajadas en el Mes";
+      document.getElementById('total-header-title').textContent = "Total Mes";
     }
     
     loadData();
@@ -190,7 +386,7 @@
   function getFormattedDateStr(day) {
     const dStr = String(day).padStart(2, '0');
     const mStr = String(currentMonth).padStart(2, '0');
-    return `${dStr}/${mStr}/${currentYear}`;
+    return `${dStr}/${mStr}`;
   }
 
   function buildTableHeaders() {
@@ -243,8 +439,12 @@
         const dayData = emp.schedule[d];
         if (dayData) {
           td.dataset.state = dayData.type;
+          if (dayData.comment && dayData.comment.trim() !== '') {
+            td.classList.add('has-comment');
+          }
+          
           if (dayData.type === 'turno') {
-            td.innerHTML = `<span style="font-size:9px; display:block">${dayData.start}-${dayData.end}</span><strong>${dayData.netHours}h</strong>`;
+            td.innerHTML = `<span style="font-size:8px; display:block">${dayData.start}-${dayData.end}</span><strong>${dayData.netHours}h</strong>`;
           } else {
             td.textContent = capitalize(dayData.type);
           }
@@ -268,12 +468,14 @@
 
   function openModal(empIndex, day) {
     activeEdit = { empIndex, day };
-    document.getElementById('modal-title').textContent = `Fecha ${getFormattedDateStr(day)} - ${employees[empIndex].name}`;
+    const fullDateStr = `${String(day).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')}/${currentYear}`;
+    document.getElementById('modal-title').textContent = `Fecha ${fullDateStr} - ${employees[empIndex].name}`;
     
-    const currentData = employees[empIndex].schedule[day] || { type: 'turno', start: '09:00', end: '17:00' };
+    const currentData = employees[empIndex].schedule[day] || { type: 'turno', start: '11:30', end: '20:30', comment: '' };
     document.getElementById('modal-type').value = currentData.type;
-    document.getElementById('modal-start').value = currentData.start || '09:00';
-    document.getElementById('modal-end').value = currentData.end || '17:00';
+    document.getElementById('modal-start').value = currentData.start || '11:30';
+    document.getElementById('modal-end').value = currentData.end || '20:30';
+    document.getElementById('modal-comment').value = currentData.comment || '';
     
     toggleTimeInputs();
     document.getElementById('shift-modal').style.display = 'flex';
@@ -293,6 +495,7 @@
     const type = document.getElementById('modal-type').value;
     const start = document.getElementById('modal-start').value;
     const end = document.getElementById('modal-end').value;
+    const comment = document.getElementById('modal-comment').value;
     
     let netHours = 0;
     if (type === 'turno') {
@@ -303,7 +506,7 @@
       netHours = Math.max(0, parseFloat((diff - 1).toFixed(1)));
     }
 
-    employees[activeEdit.empIndex].schedule[activeEdit.day] = { type, start, end, netHours };
+    employees[activeEdit.empIndex].schedule[activeEdit.day] = { type, start, end, netHours, comment };
     saveData();
     closeModal();
     renderTable();
@@ -320,7 +523,7 @@
   }
 
   function addEmployee() {
-    const name = prompt("Ingrese nombre del empleado:");
+    const name = prompt("Ingrese el nombre del nuevo colaborador:");
     if (name && name.trim() !== "") {
       employees.push({ name: name.trim(), schedule: {} });
       saveData();
@@ -349,29 +552,25 @@
     const period = document.getElementById('period-picker').value;
     
     let csvContent = "data:text/csv;charset=utf-8,";
-    let headers = ["Nombre", "Fecha", "Estado", "Horas Trabajadas", "Dias Trabajados"];
+    let headers = ["Nombre", "Fecha", "Estado", "Horas Trabajadas", "Comentario"];
     csvContent += headers.join(",") + "\r\n";
 
     employees.forEach(emp => {
       for (let d = startDay; d <= endDay; d++) {
         const data = emp.schedule[d];
-        const fechaStr = getFormattedDateStr(d);
+        const fechaStr = `${String(d).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')}/${currentYear}`;
         
         let estado = "Sin Asignar";
         let horasTrabajadas = 0;
-        let diasTrabajados = 0;
+        let comentario = "";
 
         if (data) {
+          estado = capitalize(data.type);
           if (data.type === 'turno') {
-            estado = "Turno";
             horasTrabajadas = data.netHours || 0;
-            diasTrabajados = 1;
-          } else if (data.type === 'libre') {
-            estado = "Libre";
-          } else if (data.type === 'vacaciones') {
-            estado = "Vacaciones";
-          } else if (data.type === 'ausente') {
-            estado = "Ausente";
+          }
+          if (data.comment) {
+            comentario = `"${data.comment.replace(/"/g, '""')}"`;
           }
         }
 
@@ -380,7 +579,7 @@
           fechaStr,
           estado,
           horasTrabajadas,
-          diasTrabajados
+          comentario
         ];
 
         csvContent += row.join(",") + "\r\n";
@@ -390,7 +589,7 @@
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `planilla_${period}_${monthVal}.csv`);
+    link.setAttribute("download", `reporte_horas_${period}_${monthVal}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -399,12 +598,14 @@
   async function exportReportPDF() {
     const { jsPDF } = window.jspdf;
     const btn = document.getElementById('btn-export-pdf');
+    const bottomBar = document.getElementById('action-buttons-bar');
+    const deleteBtns = document.querySelectorAll('.btn-delete');
     
     const originalText = btn.innerText;
     btn.innerText = '⏳ Generando PDF HD...';
     btn.disabled = true;
 
-    const deleteBtns = document.querySelectorAll('.btn-delete');
+    bottomBar.style.display = 'none';
     deleteBtns.forEach(b => b.style.display = 'none');
 
     try {
@@ -432,12 +633,13 @@
       
       const monthVal = document.getElementById('month-picker').value;
       const period = document.getElementById('period-picker').value;
-      pdf.save(`control_asistencia_${period}_${monthVal}.pdf`);
+      pdf.save(`reporte_asistencia_${period}_${monthVal}.pdf`);
 
     } catch (error) {
       console.error('Error generando PDF:', error);
       alert('Ocurrió un error al generar el PDF.');
     } finally {
+      bottomBar.style.display = 'flex';
       deleteBtns.forEach(b => b.style.display = 'flex');
       btn.innerText = originalText;
       btn.disabled = false;
