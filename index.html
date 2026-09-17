@@ -2,38 +2,44 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Horarios - Restaurante</title>
-<!-- Librerías necesarias para la exportación avanzada a PDF -->
+<!-- Librerías para exportación a PDF HD -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-  body { font-family: Arial, sans-serif; background: #f8fafc; padding: 20px; color: #1e293b; }
-  .container { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); max-width: 100%; overflow-x: auto; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f8fafc; padding: 15px; color: #1e293b; margin: 0; }
+  
+  .container { background: #fff; border-radius: 8px; padding: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 1400px; margin: 0 auto; }
   
   .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-  h2 { margin: 0; font-size: 20px; color: #0f172a; }
+  h2 { margin: 0; font-size: 18px; color: #0f172a; }
   
-  .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; width: 100%; sm-width: auto; }
   input[type="month"], select { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; }
   
-  button { background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; }
+  button { background: #2563eb; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
   button:hover { background: #1d4ed8; }
   button.btn-success { background: #059669; }
   button.btn-success:hover { background: #047857; }
   button.btn-pdf { background: #dc2626; }
   button.btn-pdf:hover { background: #b91c1c; }
 
+  /* Contenedor responsivo de la tabla con scroll horizontal suave */
+  .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; border: 1px solid #e2e8f0; border-radius: 6px; }
+
   /* Tabla */
-  table { width: 100%; border-collapse: collapse; min-width: 900px; margin-top: 10px; }
-  th, td { border: 1px solid #e2e8f0; padding: 6px; text-align: center; font-size: 11px; }
+  table { width: 100%; border-collapse: collapse; min-width: 900px; }
+  th, td { border: 1px solid #e2e8f0; padding: 6px; text-align: center; font-size: 11px; white-space: nowrap; }
   th { background: #f1f5f9; color: #475569; font-weight: bold; position: sticky; top: 0; z-index: 2; }
   
   /* Columna Fija de Nombres a la Izquierda */
-  .employee-col { text-align: left; width: 180px; font-weight: bold; background: #fff; position: sticky; left: 0; z-index: 3; font-size: 12px; display: flex; justify-content: space-between; align-items: center; padding: 8px 6px; border-right: 1px solid #e2e8f0; }
+  .employee-col { text-align: left; width: 170px; font-weight: bold; background: #fff; position: sticky; left: 0; z-index: 3; font-size: 12px; display: flex; justify-content: space-between; align-items: center; padding: 6px; border-right: 1px solid #e2e8f0; }
   th.employee-col { z-index: 4; display: table-cell; text-align: center; }
   
-  .total-col { font-weight: bold; background: #f8fafc; width: 120px; font-size: 12px; }
+  .total-col { font-weight: bold; background: #f8fafc; width: 110px; font-size: 12px; }
 
   .day-cell { cursor: pointer; user-select: none; height: 38px; transition: background 0.2s; }
   .day-cell:hover { opacity: 0.85; filter: brightness(0.95); }
@@ -45,15 +51,15 @@
   .day-cell[data-state="ausente"] { background: #e2e8f0; color: #475569; }
   .day-cell[data-state="vacio"] { background: #ffffff; color: #cbd5e1; }
 
-  .btn-delete { background: #ef4444; color: white; border: none; border-radius: 4px; width: 20px; height: 20px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .btn-delete { background: #ef4444; color: white; border: none; border-radius: 4px; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
   .btn-delete:hover { background: #dc2626; }
 
-  .legend { display: flex; gap: 15px; margin-top: 15px; font-size: 12px; align-items: center; flex-wrap: wrap; }
-  .legend-box { width: 14px; height: 14px; border-radius: 3px; display: inline-block; vertical-align: middle; }
+  .legend { display: flex; gap: 12px; margin-top: 12px; font-size: 11px; align-items: center; flex-wrap: wrap; }
+  .legend-box { width: 12px; height: 12px; border-radius: 3px; display: inline-block; vertical-align: middle; }
 
-  /* Modal */
-  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 10; }
-  .modal-content { background: white; padding: 20px; border-radius: 8px; width: 320px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  /* Modal Adaptable */
+  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 10; padding: 15px; }
+  .modal-content { background: white; padding: 20px; border-radius: 8px; width: 100%; max-width: 320px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
   .modal-content h3 { margin-top: 0; font-size: 16px; color: #0f172a; }
   .form-group { margin-bottom: 12px; }
   .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #475569; }
@@ -66,12 +72,12 @@
 
 <div class="container" id="pdf-container">
   <div class="header-actions">
-    <h2>Hoja de control / asignación de horarios</h2>
+    <h2>Control de Asistencia - Restaurante</h2>
     <div class="controls">
       <input type="month" id="month-picker" value="2026-10" onchange="initMonth()">
-      <button onclick="addEmployee()">+ Agregar Empleado</button>
-      <button class="btn-success" onclick="exportToCSV()">📥 Exportar Planilla CSV</button>
-      <button class="btn-pdf" id="btn-export-pdf" onclick="exportReportPDF()">📄 Exportar PDF</button>
+      <button onclick="addEmployee()">+ Agregar</button>
+      <button class="btn-success" onclick="exportToCSV()">📥 CSV</button>
+      <button class="btn-pdf" id="btn-export-pdf" onclick="exportReportPDF()">📄 PDF HD</button>
     </div>
   </div>
 
@@ -80,22 +86,24 @@
     <span><i class="legend-box" style="background:#fee2e2"></i> Libre</span>
     <span><i class="legend-box" style="background:#fef3c7"></i> Vacaciones</span>
     <span><i class="legend-box" style="background:#e2e8f0"></i> Ausente</span>
-    <span style="margin-left: auto; color: #64748b;">💡 <i>Los cambios se guardan automáticamente en este navegador</i></span>
+    <span style="margin-left: auto; color: #64748b;">💡 <i>Auto-guardado activo</i></span>
   </div>
 
-  <table id="schedule-table">
-    <thead>
-      <tr id="header-row">
-        <th class="employee-col">Empleado / Rol</th>
-        <th class="total-col">Total Horas Trabajadas en el Mes</th>
-      </tr>
-    </thead>
-    <tbody id="employee-tbody">
-    </tbody>
-  </table>
+  <div class="table-responsive">
+    <table id="schedule-table">
+      <thead>
+        <tr id="header-row">
+          <th class="employee-col">Empleado / Rol</th>
+          <th class="total-col">Total Horas Trabajadas en el Mes</th>
+        </tr>
+      </thead>
+      <tbody id="employee-tbody">
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<!-- Modal de Edición -->
+<!-- Modal -->
 <div class="modal" id="shift-modal">
   <div class="modal-content">
     <h3 id="modal-title">Configurar Día</h3>
@@ -368,32 +376,31 @@
     document.body.removeChild(link);
   }
 
-  // Función de exportación a PDF basada en tu lógica robusta de html2canvas + jsPDF
+  // Exportación a PDF de Alta Definición (HD) sin perder calidad
   async function exportReportPDF() {
     const { jsPDF } = window.jspdf;
     const btn = document.getElementById('btn-export-pdf');
     
     const originalText = btn.innerText;
-    btn.innerText = '⏳ Generando PDF...';
+    btn.innerText = '⏳ Generando PDF HD...';
     btn.disabled = true;
 
-    // Ocultar botones de eliminar temporalmente para el reporte impreso
     const deleteBtns = document.querySelectorAll('.btn-delete');
     deleteBtns.forEach(b => b.style.display = 'none');
 
     try {
       const targetContainer = document.getElementById('pdf-container');
       
+      // Escala 3 garantiza máxima nitidez en textos e imágenes generadas
       const canvas = await html2canvas(targetContainer, {
         backgroundColor: '#ffffff',
-        scale: 2,
+        scale: 3,
         useCORS: true,
         logging: false
       });
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
       
-      // Crear PDF apaisado (landscape)
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
@@ -403,10 +410,10 @@
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      pdf.addImage(imgData, 'JPEG', 0, 10, pdfWidth, pdfHeight);
+      pdf.addImage(imgData, 'JPEG', 0, 5, pdfWidth, pdfHeight);
       
       const monthVal = document.getElementById('month-picker').value;
-      pdf.save(`control_asistencia_${monthVal}.pdf`);
+      pdf.save(`control_asistencia_hd_${monthVal}.pdf`);
 
     } catch (error) {
       console.error('Error generando PDF:', error);
