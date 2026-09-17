@@ -171,15 +171,15 @@
     if (period === 'q1') {
       startDay = 1;
       endDay = 15;
-      document.getElementById('total-header-title').textContent = "Total Horas (Q1)";
+      document.getElementById('total-header-title').textContent = "Total Horas (1ra Quincena)";
     } else if (period === 'q2') {
       startDay = 16;
       endDay = currentDaysCount;
-      document.getElementById('total-header-title').textContent = "Total Horas (Q2)";
+      document.getElementById('total-header-title').textContent = "Total Horas (2da Quincena)";
     } else {
       startDay = 1;
       endDay = currentDaysCount;
-      document.getElementById('total-header-title').textContent = "Total Horas (M)";
+      document.getElementById('total-header-title').textContent = "Total Horas Trabajadas en el Mes";
     }
     
     loadData();
@@ -270,10 +270,10 @@
     activeEdit = { empIndex, day };
     document.getElementById('modal-title').textContent = `Fecha ${getFormattedDateStr(day)} - ${employees[empIndex].name}`;
     
-    const currentData = employees[empIndex].schedule[day] || { type: 'turno', start: '11:30', end: '20:30' };
+    const currentData = employees[empIndex].schedule[day] || { type: 'turno', start: '09:00', end: '17:00' };
     document.getElementById('modal-type').value = currentData.type;
-    document.getElementById('modal-start').value = currentData.start || '11:30';
-    document.getElementById('modal-end').value = currentData.end || '20:30';
+    document.getElementById('modal-start').value = currentData.start || '09:00';
+    document.getElementById('modal-end').value = currentData.end || '17:00';
     
     toggleTimeInputs();
     document.getElementById('shift-modal').style.display = 'flex';
